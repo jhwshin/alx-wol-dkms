@@ -6,7 +6,7 @@ See bug report:
 [https://bugzilla.kernel.org/show_bug.cgi?id=61651](https://bugzilla.kernel.org/show_bug.cgi?id=61651)
 
 There were patches
-* AUR
+* AUR (FORKED this repo)
 [https://aur.archlinux.org/packages/alx-wol-dkms](https://aur.archlinux.org/packages/alx-wol-dkms)
 
 * Git
