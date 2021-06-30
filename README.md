@@ -1,5 +1,7 @@
 # alx-wol-dkms
 
+## patch fix update - __by jhwshin__
+
 Qualcomm Atheros Killer E220x Drivers had Wake-on-Lan (WoL) feature removed from the Linux Kernel a while back due to buggy unintended wakes.
 
 See bug report:
