@@ -24,4 +24,4 @@ To install simply clone this repository and run `makepkg -si` inside the directo
 
 You may also need to install `linux-headers`
 
-For future kernels (5.12.5+) modify kernel versions on `PKGBUILD` and checksums using `makepkg -g`.
+If patch fails for future kernels (5.12.5+) you may need to modify kernel versions on `PKGBUILD` and checksums using `makepkg -g`.
