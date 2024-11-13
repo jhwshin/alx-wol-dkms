@@ -1,16 +1,14 @@
-diff --git a/ethtool.c b/ethtool.c
-index 2f4eabf..859e272 100644
+diff --color -Naur a/ethtool.c b/ethtool.c
 --- a/ethtool.c
 +++ b/ethtool.c
-@@ -310,11 +310,47 @@ static int alx_get_sset_count(struct net_device *netdev, int sset)
- 	}
- }
- 
+@@ -322,0 +323,39 @@
++
 +static void alx_get_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
 +{
 +	struct alx_priv *alx = netdev_priv(netdev);
 +	struct alx_hw *hw = &alx->hw;
 +
++	mutex_lock(&alx->mtx);
 +	wol->supported = WAKE_MAGIC | WAKE_PHY;
 +	wol->wolopts = 0;
 +
@@ -18,6 +16,7 @@ index 2f4eabf..859e272 100644
 +		wol->wolopts |= WAKE_MAGIC;
 +	if (hw->sleep_ctrl & ALX_SLEEP_WOL_PHY)
 +		wol->wolopts |= WAKE_PHY;
++	mutex_unlock(&alx->mtx);
 +}
 +
 +static int alx_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
@@ -28,6 +27,7 @@ index 2f4eabf..859e272 100644
 +	if (wol->wolopts & ~(WAKE_MAGIC | WAKE_PHY))
 +		return -EOPNOTSUPP;
 +
++	mutex_lock(&alx->mtx);
 +	hw->sleep_ctrl = 0;
 +
 +	if (wol->wolopts & WAKE_MAGIC)
@@ -36,28 +36,18 @@ index 2f4eabf..859e272 100644
 +		hw->sleep_ctrl |= ALX_SLEEP_WOL_PHY;
 +
 +	device_set_wakeup_enable(&alx->hw.pdev->dev, hw->sleep_ctrl);
++	mutex_unlock(&alx->mtx);
 +
 +	return 0;
 +}
 +
- const struct ethtool_ops alx_ethtool_ops = {
- 	.get_pauseparam	= alx_get_pauseparam,
- 	.set_pauseparam	= alx_set_pauseparam,
- 	.get_msglevel	= alx_get_msglevel,
- 	.set_msglevel	= alx_set_msglevel,
+@@ -327,0 +367,2 @@
 +	.get_wol	= alx_get_wol,
 +	.set_wol	= alx_set_wol,
- 	.get_link	= ethtool_op_get_link,
- 	.get_strings	= alx_get_strings,
- 	.get_sset_count	= alx_get_sset_count,
-diff --git a/hw.c b/hw.c
-index 6ac40b0..4791b9d 100644
+diff --color -Nar -u0 a/hw.c b/hw.c
 --- a/hw.c
 +++ b/hw.c
-@@ -332,6 +332,16 @@ void alx_set_macaddr(struct alx_hw *hw, const u8 *addr)
- 	alx_write_mem32(hw, ALX_STAD1, val);
- }
- 
+@@ -334,0 +335,10 @@
 +static void alx_enable_osc(struct alx_hw *hw)
 +{
 +	u32 val;
@@ -68,14 +58,7 @@ index 6ac40b0..4791b9d 100644
 +	alx_write_mem32(hw, ALX_MISC, val | ALX_MISC_INTNLOSC_OPEN);
 +}
 +
- static void alx_reset_osc(struct alx_hw *hw, u8 rev)
- {
- 	u32 val, val2;
-@@ -848,6 +858,66 @@ void alx_post_phy_link(struct alx_hw *hw)
- 	}
- }
- 
-+
+@@ -850,0 +861,59 @@
 +/* NOTE:
 + *    1. phy link must be established before calling this function
 + *    2. wol option (pattern,magic,link,etc.) is configed before call it.
@@ -135,13 +118,7 @@ index 6ac40b0..4791b9d 100644
 +	return 0;
 +}
 +
- bool alx_phy_configured(struct alx_hw *hw)
- {
- 	u32 cfg, hw_cfg;
-@@ -920,6 +990,26 @@ int alx_clear_phy_intr(struct alx_hw *hw)
- 	return alx_read_phy_reg(hw, ALX_MII_ISR, &isr);
- }
- 
+@@ -922,0 +992,20 @@
 +int alx_config_wol(struct alx_hw *hw)
 +{
 +	u32 wol = 0;
@@ -162,13 +139,7 @@ index 6ac40b0..4791b9d 100644
 +	return err;
 +}
 +
- void alx_disable_rss(struct alx_hw *hw)
- {
- 	u32 ctrl = alx_read_mem32(hw, ALX_RXQ0);
-@@ -1045,6 +1135,71 @@ void alx_mask_msix(struct alx_hw *hw, int index, bool mask)
- }
- 
- 
+@@ -1046,0 +1136,64 @@
 +int alx_select_powersaving_speed(struct alx_hw *hw, int *speed, u8 *duplex)
 +{
 +	int i, err;
@@ -213,8 +184,8 @@ index 6ac40b0..4791b9d 100644
 +	if (err)
 +		return err;
 +	err = alx_setup_speed_duplex(hw, alx_speed_to_ethadv(*speed, *duplex) |
-+					 ADVERTISED_Autoneg, ALX_FC_ANEG |
-+					 ALX_FC_RX | ALX_FC_TX);
++					ADVERTISED_Autoneg, ALX_FC_ANEG |
++					ALX_FC_RX | ALX_FC_TX);
 +	if (err)
 +		return err;
 +
@@ -233,60 +204,24 @@ index 6ac40b0..4791b9d 100644
 +
 +	return 0;
 +}
-+
- bool alx_get_phy_info(struct alx_hw *hw)
- {
- 	u16  devs1, devs2;
-diff --git a/hw.h b/hw.h
-index e42d7e0..a7fb6c8 100644
+diff --color -Nar -u0 a/hw.h b/hw.h
 --- a/hw.h
 +++ b/hw.h
-@@ -487,6 +487,8 @@ struct alx_hw {
- 	u8 flowctrl;
- 	u32 adv_cfg;
- 
-+	u32 sleep_ctrl;
+@@ -489,0 +490,2 @@
++    u32 sleep_ctrl;
 +
- 	spinlock_t mdio_lock;
- 	struct mdio_if_info mdio;
- 	u16 phy_id[2];
-@@ -549,12 +551,14 @@ void alx_reset_pcie(struct alx_hw *hw);
- void alx_enable_aspm(struct alx_hw *hw, bool l0s_en, bool l1_en);
- int alx_setup_speed_duplex(struct alx_hw *hw, u32 ethadv, u8 flowctrl);
- void alx_post_phy_link(struct alx_hw *hw);
+@@ -551,0 +554 @@
 +int alx_pre_suspend(struct alx_hw *hw, int speed, u8 duplex);
- int alx_read_phy_reg(struct alx_hw *hw, u16 reg, u16 *phy_data);
- int alx_write_phy_reg(struct alx_hw *hw, u16 reg, u16 phy_data);
- int alx_read_phy_ext(struct alx_hw *hw, u8 dev, u16 reg, u16 *pdata);
- int alx_write_phy_ext(struct alx_hw *hw, u8 dev, u16 reg, u16 data);
- int alx_read_phy_link(struct alx_hw *hw);
- int alx_clear_phy_intr(struct alx_hw *hw);
+@@ -557,0 +561 @@
 +int alx_config_wol(struct alx_hw *hw);
- void alx_cfg_mac_flowcontrol(struct alx_hw *hw, u8 fc);
- void alx_start_mac(struct alx_hw *hw);
- int alx_reset_mac(struct alx_hw *hw);
-@@ -563,6 +567,7 @@ bool alx_phy_configured(struct alx_hw *hw);
- void alx_configure_basic(struct alx_hw *hw);
- void alx_mask_msix(struct alx_hw *hw, int index, bool mask);
- void alx_disable_rss(struct alx_hw *hw);
+@@ -565,0 +570 @@
 +int alx_select_powersaving_speed(struct alx_hw *hw, int *speed, u8 *duplex);
- bool alx_get_phy_info(struct alx_hw *hw);
- void alx_update_hw_stats(struct alx_hw *hw);
- 
---- a/main.c	2019-12-03 16:51:19.119352509 +0800
-+++ b/main.c"	2019-12-03 16:57:16.477599479 +0800
-@@ -1069,6 +1069,7 @@
- 	alx->dev->max_mtu = ALX_MAX_FRAME_LEN(ALX_MAX_FRAME_SIZE);
- 	alx->tx_ringsz = 256;
- 	alx->rx_ringsz = 512;
-+	hw->sleep_ctrl = ALX_SLEEP_WOL_MAGIC | ALX_SLEEP_WOL_PHY;
- 	hw->imt = 200;
- 	alx->int_mask = ALX_ISR_MISC;
- 	hw->dma_chnl = hw->max_dma_chnl;
-@@ -1343,6 +1344,66 @@
- 	return 0;
- }
- 
+diff --color -Nar -u0 a/main.c b/main.c
+--- a/main.c
++++ b/main.c
+@@ -1070,0 +1071 @@
++    hw->sleep_ctrl = ALX_SLEEP_WOL_MAGIC | ALX_SLEEP_WOL_PHY;
+@@ -1372,0 +1374,63 @@
 +static int __alx_shutdown(struct pci_dev *pdev, bool *wol_en)
 +{
 +	struct alx_priv *alx = pci_get_drvdata(pdev);
@@ -335,10 +270,13 @@ index e42d7e0..a7fb6c8 100644
 +
 +static void alx_shutdown(struct pci_dev *pdev)
 +{
++	struct alx_priv *alx = pci_get_drvdata(pdev);
 +	int err;
 +	bool wol_en;
 +
++	mutex_lock(&alx->mtx);
 +	err = __alx_shutdown(pdev, &wol_en);
++	mutex_unlock(&alx->mtx);
 +	if (!err) {
 +		pci_wake_from_d3(pdev, wol_en);
 +		pci_set_power_state(pdev, PCI_D3hot);
@@ -347,33 +285,25 @@ index e42d7e0..a7fb6c8 100644
 +	}
 +}
 +
- static void alx_link_check(struct work_struct *work)
- {
- 	struct alx_priv *alx;
-@@ -1836,6 +1897,7 @@
- 		goto out_unmap;
- 	}
- 
-+	device_set_wakeup_enable(&pdev->dev, hw->sleep_ctrl);
- 	netdev_info(netdev,
- 		    "Qualcomm Atheros AR816x/AR817x Ethernet [%pM]\n",
- 		    netdev->dev_addr);
-@@ -1878,40 +1940,71 @@
- static int alx_suspend(struct device *dev)
- {
- 	struct alx_priv *alx = dev_get_drvdata(dev);
-+   struct pci_dev *pdev = alx->hw.pdev;
-+	int err;
-+	bool wol_en;
- 
+@@ -1865,0 +1930,2 @@
++    device_set_wakeup_enable(&pdev->dev, hw->sleep_ctrl);
++
+@@ -1908,2 +1974,3 @@
 -	if (!netif_running(alx->dev))
 -		return 0;
++	struct pci_dev *pdev = to_pci_dev(dev);
++	int err;
++	bool wol_en;
+@@ -1912 +1979,2 @@
 -	netif_device_detach(alx->dev);
++	if (netif_running(alx->dev))
++		netif_device_detach(alx->dev);
+@@ -1915 +1983,13 @@
 -	__alx_stop(alx);
 +	err = __alx_shutdown(pdev, &wol_en);
 +	if (err) {
 +		dev_err(&pdev->dev, "shutdown fail in suspend %d\n", err);
-+		return err;
++		goto unlock;
 +	}
 +
 +	if (wol_en) {
@@ -382,98 +312,52 @@ index e42d7e0..a7fb6c8 100644
 +		pci_wake_from_d3(pdev, false);
 +		pci_set_power_state(pdev, PCI_D3hot);
 +	}
- 	return 0;
- }
- 
- static int alx_resume(struct device *dev)
- {
- 	struct alx_priv *alx = dev_get_drvdata(dev);
-+	struct net_device *netdev = alx->dev;
- 	struct alx_hw *hw = &alx->hw;
-+   struct pci_dev *pdev = hw->pdev;
- 	int err;
- 
-+  pci_set_power_state(pdev, PCI_D0);
-+  pci_restore_state(pdev);
-+  pci_save_state(pdev);
-+
-+  pci_enable_wake(pdev, PCI_D3hot, 0);
-+  pci_enable_wake(pdev, PCI_D3cold, 0);
-+
-+  hw->link_speed = SPEED_UNKNOWN;
-+  alx->int_mask = ALX_ISR_MISC;
-+
-+	alx_reset_pcie(hw);
- 	alx_reset_phy(hw);
- 
--	if (!netif_running(alx->dev))
--		return 0;
-
--	rtnl_lock();
--	err = __alx_open(alx, true);
--	rtnl_unlock();
--	if (err)
--	   return err;
-
--	netif_device_attach(alx->dev);
-
++unlock:
+@@ -1919 +1999 @@
 -	return 0;
-+  err = alx_reset_mac(hw);
-+  if (err) {
-+    netif_err(alx, hw, alx->dev,
-+									"resume:reset_mac fail %d\n", err);
-+    return -EIO;
-+  }
-+  err = alx_setup_speed_duplex(hw, hw->adv_cfg, hw->flowctrl);
-+	if (err) {
-+		netif_err(alx, hw, alx->dev,
-+    							"resume:setup_speed_duplex fail %d\n", err);
-+    return -EIO;
-+  }
-+  
-+	if (netif_running(netdev)) {
-+		err = __alx_open(alx, true);
-+    if (err)
-+      return err;
-+  }
-+  netif_device_attach(netdev);
-+  return err;
- }
- 
--static SIMPLE_DEV_PM_OPS(alx_pm_ops, alx_suspend, alx_resume);
--#define ALX_PM_OPS      (&alx_pm_ops)
--#else
--#define ALX_PM_OPS      NULL
- #endif
- 
- 
-@@ -1954,6 +2049,8 @@
- 	}
- 
- 	pci_set_master(pdev);
++	return err;
+@@ -1924 +2004,3 @@
+-	struct alx_priv *alx = dev_get_drvdata(dev);
++	struct pci_dev *pdev = to_pci_dev(dev);
++	struct alx_priv *alx = pci_get_drvdata(pdev);
++	struct net_device *netdev = alx->dev;
+@@ -1927,0 +2010,7 @@
++	pci_set_power_state(pdev, PCI_D0);
++	pci_restore_state(pdev);
++	pci_save_state(pdev);
++
 +	pci_enable_wake(pdev, PCI_D3hot, 0);
 +	pci_enable_wake(pdev, PCI_D3cold, 0);
- 
- 	alx_reset_pcie(hw);
- 	if (!alx_reset_mac(hw))
-@@ -2003,11 +2100,20 @@
- 	{}
- };
- 
-+#ifdef CONFIG_PM_SLEEP
-+static SIMPLE_DEV_PM_OPS(alx_pm_ops, alx_suspend, alx_resume);
-+#define ALX_PM_OPS      (&alx_pm_ops)
-+#else
-+#define ALX_PM_OPS      NULL
-+#endif
 +
+@@ -1929,0 +2019,4 @@
++	hw->link_speed = SPEED_UNKNOWN;
++	alx->int_mask = ALX_ISR_MISC;
 +
- static struct pci_driver alx_driver = {
- 	.name        = alx_drv_name,
- 	.id_table    = alx_pci_tbl,
- 	.probe       = alx_probe,
- 	.remove      = alx_remove,
-+	.shutdown    = alx_shutdown,
- 	.err_handler = &alx_err_handlers,
- 	.driver.pm   = ALX_PM_OPS,
- };
++	alx_reset_pcie(hw);
+@@ -1932 +2025,17 @@
+-	if (!netif_running(alx->dev)) {
++	err = alx_reset_mac(hw);
++	if (err) {
++		netif_err(alx, hw, alx->dev,
++			  "resume:reset_mac fail %d\n", err);
++		err = -EIO;
++		goto unlock;
++	}
++
++	err = alx_setup_speed_duplex(hw, hw->adv_cfg, hw->flowctrl);
++	if (err) {
++		netif_err(alx, hw, alx->dev,
++			  "resume:setup_speed_duplex fail %d\n", err);
++		err = -EIO;
++		goto unlock;
++	}
++
++	if (!netif_running(netdev)) {
+@@ -1941 +2050 @@
+-	netif_device_attach(alx->dev);
++    netif_device_attach(netdev);
+@@ -1992,0 +2102,2 @@
++	pci_enable_wake(pdev, PCI_D3hot, 0);
++	pci_enable_wake(pdev, PCI_D3cold, 0);    
+@@ -2046,0 +2158 @@
++    .shutdown    = alx_shutdown,
