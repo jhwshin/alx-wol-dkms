@@ -19,29 +19,29 @@ Last tested and confirmed to be working on:
 $ ethtool enp6s0
 
 Settings for enp6s0:
-	Supported ports: [ TP ]
-	Supported link modes:   10baseT/Half 10baseT/Full
-	                        100baseT/Half 100baseT/Full
-	                        1000baseT/Full
-	Supported pause frame use: Symmetric Receive-only
-	Supports auto-negotiation: Yes
-	Supported FEC modes: Not reported
-	Advertised link modes:  10baseT/Half 10baseT/Full
-	                        100baseT/Half 100baseT/Full
-	                        1000baseT/Full
-	Advertised pause frame use: Symmetric
-	Advertised auto-negotiation: Yes
-	Advertised FEC modes: Not reported
-	Speed: 1000Mb/s
-	Duplex: Full
-	Auto-negotiation: on
-	Port: Twisted Pair
-	PHYAD: 0
-	Transceiver: internal
-	MDI-X: Unknown
+    Supported ports: [ TP ]
+    Supported link modes:   10baseT/Half 10baseT/Full
+                            100baseT/Half 100baseT/Full
+                            1000baseT/Full
+    Supported pause frame use: Symmetric Receive-only
+    Supports auto-negotiation: Yes
+    Supported FEC modes: Not reported
+    Advertised link modes:  10baseT/Half 10baseT/Full
+                            100baseT/Half 100baseT/Full
+                            1000baseT/Full
+    Advertised pause frame use: Symmetric
+    Advertised auto-negotiation: Yes
+    Advertised FEC modes: Not reported
+    Speed: 1000Mb/s
+    Duplex: Full
+    Auto-negotiation: on
+    Port: Twisted Pair
+    PHYAD: 0
+    Transceiver: internal
+    MDI-X: Unknown
         Current message level: 0x000060e4 (24804)
                                link ifup rx_err tx_err hw wol
-	Link detected: yes
+    Link detected: yes
 ```
 </details>
 
@@ -53,31 +53,31 @@ Settings for enp6s0:
 $ ethtool enp6s0
 
 Settings for enp6s0:
-	Supported ports: [ TP ]
-	Supported link modes:   10baseT/Half 10baseT/Full
-	                        100baseT/Half 100baseT/Full
-	                        1000baseT/Full
-	Supported pause frame use: Symmetric Receive-only
-	Supports auto-negotiation: Yes
-	Supported FEC modes: Not reported
-	Advertised link modes:  10baseT/Half 10baseT/Full
-	                        100baseT/Half 100baseT/Full
-	                        1000baseT/Full
-	Advertised pause frame use: Symmetric
-	Advertised auto-negotiation: Yes
-	Advertised FEC modes: Not reported
-	Speed: 1000Mb/s
-	Duplex: Full
-	Auto-negotiation: on
-	Port: Twisted Pair
-	PHYAD: 0
-	Transceiver: internal
-	MDI-X: Unknown
-	Supports Wake-on: pg
-	Wake-on: pg
+    Supported ports: [ TP ]
+    Supported link modes:   10baseT/Half 10baseT/Full
+                            100baseT/Half 100baseT/Full
+                            1000baseT/Full
+    Supported pause frame use: Symmetric Receive-only
+    Supports auto-negotiation: Yes
+    Supported FEC modes: Not reported
+    Advertised link modes:  10baseT/Half 10baseT/Full
+                            100baseT/Half 100baseT/Full
+                            1000baseT/Full
+    Advertised pause frame use: Symmetric
+    Advertised auto-negotiation: Yes
+    Advertised FEC modes: Not reported
+    Speed: 1000Mb/s
+    Duplex: Full
+    Auto-negotiation: on
+    Port: Twisted Pair
+    PHYAD: 0
+    Transceiver: internal
+    MDI-X: Unknown
+    Supports Wake-on: pg
+    Wake-on: pg
         Current message level: 0x000060e4 (24804)
                                link ifup rx_err tx_err hw wol
-	Link detected: yes
+    Link detected: yes
 
 # p = physical activity
 # g = magic packet
@@ -111,7 +111,7 @@ $ makepkg -si
 
 You may also need to install `linux-headers`, `linux-zen-headers` or `linux-lts-headers` depending on the kernel your running.
 
-## Enabling WOL
+## Enabling WoL
 
 1. Install package:
 
@@ -148,6 +148,26 @@ If you are using `TLP` it may disable WoL:
 WOL_DISABLE=N
 ```
 
+## Uninstall
+
+__YET BE VERIFIED...__
+
+```bash
+# find alx-wol
+sudo dkms status
+
+# remove alx-wol
+sudo dkms remove alx-wol --all
+
+# reinstall original alx drivers
+sudo dkms add alx --all
+sudo dkms build alx --all
+sudo dkms install alx --all
+
+# rebuild initramfs
+mkinitcpio -P
+```
+
 ## DIY
 
 There is a possiblity that future patches to the kernel alx drivers could break this patch.
@@ -177,3 +197,12 @@ $ updpkgsums
 ```bash
 $ makepkg --printsrcinfo > .SRCINFO
 ```
+
+## Disclaimer
+
+I simply added the patch from `AndiWeiss` to alx kernel drivers.
+I am still new to patching drivers.
+
+__USE AT YOUR OWN RISK__
+
+The author doesn't take any responsibility for any kind of malfunction or data loss on your system.
