@@ -101,12 +101,12 @@ Using their latest commit from [[11/1/2024]](https://github.com/AndiWeiss/alx-wo
 
 1. Clone the repo
 ```bash
-$ git clone https://github.com/jhwshin/alx-wol-dkms
+git clone https://github.com/jhwshin/alx-wol-dkms
 ```
 
 2. Make and install
 ```bash
-$ makepkg -si
+makepkg -si
 ```
 
 You may also need to install `linux-headers`, `linux-zen-headers` or `linux-lts-headers` depending on the kernel your running.
@@ -116,13 +116,13 @@ You may also need to install `linux-headers`, `linux-zen-headers` or `linux-lts-
 1. Install package:
 
 ```bash
-$ pacman -S ethtool
+pacman -S ethtool
 ```
 
 2. Enable WoL - however this is transient and will not make it persistent on reboot:
 
 ```bash
-$ ethtool -s enp6s0 wol g
+ethtool -s enp6s0 wol g
 ```
 
 3. To make it persistent using `Network Manager`:
@@ -148,40 +148,24 @@ If you are using `TLP` it may disable WoL:
 WOL_DISABLE=N
 ```
 
-## Uninstall
-
-__YET BE VERIFIED...__
-
-```bash
-# find alx-wol
-sudo dkms status
-
-# remove alx-wol
-sudo dkms remove alx-wol --all
-
-# reinstall original alx drivers
-sudo dkms add alx --all
-sudo dkms build alx --all
-sudo dkms install alx --all
-
-# rebuild initramfs
-mkinitcpio -P
-```
-
 ## DIY
 
 There is a possiblity that future patches to the kernel alx drivers could break this patch.
 
 If that happens and you would like to patch it yourself:
 
-1. Download the alx driver files from [https://github.com/archlinux/linux/tree/master/drivers/net/ethernet/atheros/alx](https://github.com/archlinux/linux/tree/master/drivers/net/ethernet/atheros/alx)
-
-2. Cross check with the `alx-wol.patch` file and add the changes.
-
-3. diff the two directories pre-patch (a) and post-patch (b)
+1. Clone Linux Kernel repo:
 
 ```bash
-$ diff -Naur a b > alx-wol.patch
+git clone https://github.com/archlinux/linux
+```
+
+2. Make changes to files in `drivers/net/ethernet/atheros/alx` by cross checking with `alx-wol.patch`
+
+3. diff changes in git
+
+```bash
+git diff > alx-wol.patch
 ```
 
 4. Edit `PKGBUILD`
@@ -189,13 +173,13 @@ $ diff -Naur a b > alx-wol.patch
 5. Update checksum
 
 ```bash
-$ updpkgsums
+updpkgsums
 ```
 
-6. Create `.SRCINFO` (optional for AUR)
+6. Create `.SRCINFO` (for AUR)
 
 ```bash
-$ makepkg --printsrcinfo > .SRCINFO
+makepkg --printsrcinfo > .SRCINFO
 ```
 
 ## Disclaimer
@@ -203,6 +187,6 @@ $ makepkg --printsrcinfo > .SRCINFO
 I simply added the patch from `AndiWeiss` to alx kernel drivers.
 I am still new to patching drivers.
 
-__USE AT YOUR OWN RISK__
+__!!  USE AT YOUR OWN RISK  !!__
 
 The author doesn't take any responsibility for any kind of malfunction or data loss on your system.
